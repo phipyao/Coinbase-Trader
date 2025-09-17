@@ -1,3 +1,6 @@
+# -------------------------------------------------
+# Real-Time Coinbase Trading Engine
+# -------------------------------------------------
 import os
 from time import sleep
 from dotenv import load_dotenv
@@ -5,6 +8,7 @@ from coinbase.rest import RESTClient
 from json import dumps
 from decimal import Decimal, ROUND_DOWN
 from datetime import datetime
+from PaperRESTClient import PaperRESTClient 
 
 # Load variables from .env and initialize client
 load_dotenv()
@@ -18,7 +22,9 @@ api_secret = os.getenv("COINBASE_API_SECRET")
 # Use ECDSA signing algorithm when creating the keys
 # Save Keys in .env
 
-client = RESTClient(api_key=api_key, api_secret=api_secret)
+# USE PAPER CLIENT FOR PAPER TRADING
+client = PaperRESTClient(api_key=api_key, api_secret=api_secret)
+# client = RESTClient(api_key=api_key, api_secret=api_secret)
 
 def get_balance(ticker: str, in_usd: bool = True) -> Decimal:
     """
@@ -112,8 +118,8 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
     rake = Decimal(rake)
     reserve = get_balance(ticker) - principal
     if reserve < 0:
-        print("Insufficient Funds")
-        return
+        print(f"Insufficient Funds. Saving until principal of {principal} is met.")
+        reserve = 0
 
     while True:
         timestamp = client.get("/v2/time")["data"]["epoch"]
@@ -130,4 +136,4 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
             print("Holding...")
         sleep(delay)
 
-strategy(ticker = "BTC", principal = 200.00)
+strategy(ticker="BTC", principal=2000.00, delay=3)
