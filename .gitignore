@@ -1,4 +1,4 @@
 .DS_Store
 .env
+*.pyc
 cdp_api_key.json
-cdp_wallet_secret.txt
