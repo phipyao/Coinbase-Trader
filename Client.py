@@ -1,13 +1,18 @@
+# -------------------------------------------------
+# Trading Engine Built with Coinbase RESTClient and Custom Paper Trading Client
+# -------------------------------------------------
+
 import os
 from time import sleep
 from dotenv import load_dotenv
 from coinbase.rest import RESTClient
+from json import dumps
 from decimal import Decimal, ROUND_DOWN
 from datetime import datetime
 from PaperRESTClient import PaperRESTClient 
 
 class Client:
-    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False):
+    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=0, btc_balance=1):
         self.api_key = api_key
         self.api_secret = api_secret
 
@@ -21,7 +26,7 @@ class Client:
             api_secret = os.getenv("COINBASE_API_SECRET")
 
         if paper:
-            self.client = PaperRESTClient(api_key=api_key, api_secret=api_secret)
+            self.client = PaperRESTClient(api_key=api_key, api_secret=api_secret, usd_balance=usd_balance, btc_balance=btc_balance)
         else:
             self.client = RESTClient(api_key=api_key, api_secret=api_secret)
 
@@ -102,3 +107,21 @@ class Client:
             if status in ("FILLED", "CANCELLED", "EXPIRED", "FAILED"):
                 return
             sleep(2)
+
+    def get_account_value(self):
+        net_worth = Decimal("0.00")
+        accounts = self.client.get_accounts()["accounts"]
+        for account in accounts:
+            balance = Decimal(account["available_balance"]["value"])
+            ticker = account["currency"]
+            value = Decimal("0.00")
+            if ticker == "USD" or ticker == "USDC":
+                value = Decimal(balance).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            else:
+                price = Decimal(self.client.get_product(f"{ticker}-USD")["price"])
+                value = balance * price
+                value = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            
+            net_worth += value
+            # print(f"{ticker}: {value}")
+        return net_worth

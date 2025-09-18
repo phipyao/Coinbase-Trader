@@ -24,6 +24,7 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
     """
     principal = Decimal(principal)
     rake = Decimal(rake)
+
     reserve = client.get_balance(ticker) - principal
     if reserve < 0:
         print(f"Insufficient Funds. Saving until principal of {principal} is met.")
