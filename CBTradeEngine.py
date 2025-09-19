@@ -12,7 +12,7 @@ from datetime import datetime
 from PaperRESTClient import PaperRESTClient 
 
 class Client:
-    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=0, btc_balance=1):
+    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=0, btc_balance=0.02):
         self.api_key = api_key
         self.api_secret = api_secret
 
@@ -123,5 +123,5 @@ class Client:
                 value = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
             
             net_worth += value
-            # print(f"{ticker}: {value}")
+            print(f"{ticker}: {value}")
         return net_worth

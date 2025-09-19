@@ -2,3 +2,4 @@
 .env
 *.pyc
 cdp_api_key.json
+test.py

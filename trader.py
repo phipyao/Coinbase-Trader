@@ -5,9 +5,9 @@ from time import sleep
 from decimal import Decimal
 from datetime import datetime
 
-from Client import Client
+from CBTradeEngine import Client
 
-client = Client(paper=True)
+client = Client(paper=False)
 
 def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int = 30):
     """
@@ -43,6 +43,7 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
             client.sell_order(ticker, sell_amount)
         else:
             print("Holding...")
+        print("Total Account Value: ", client.get_account_value())
         sleep(delay)
 
-strategy(ticker="BTC", principal=2000.00, delay=3)
+strategy(ticker="BTC", principal=52.00, delay=3)
