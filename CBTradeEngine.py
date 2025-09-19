@@ -12,7 +12,7 @@ from datetime import datetime
 from PaperRESTClient import PaperRESTClient 
 
 class Client:
-    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=0, btc_balance=0.02):
+    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=20, btc_balance=0.02):
         self.api_key = api_key
         self.api_secret = api_secret
 
