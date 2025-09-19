@@ -53,6 +53,8 @@ class Client:
         balance = Decimal(account["available_balance"]["value"])
         if not in_usd:
             return balance
+        if ticker == "USD" or ticker == "USDC":
+            return Decimal(balance).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
         
         price = Decimal(self.client.get_product(f"{ticker}-USD")["price"])
         value = balance * price
@@ -79,7 +81,7 @@ class Client:
 
     def sell_order(self, ticker: str, usd_amount: Decimal):
         """
-        Place a market sell order for a given USD notional.
+        Place a market sell order for a given USD notional. Main thread will sleep until balance properly updates.
 
         Args:
             ticker (str): Currency symbol (e.g., "BTC").
@@ -91,6 +93,9 @@ class Client:
         if order_qty > balance:
             print("Insufficient Funds")
             return
+    
+        usd_balance = self.get_balance("USD") 
+        delay = 0
         
         order = self.client.market_order_sell(
             client_order_id=f"sell-{ticker}-{datetime.now().timestamp()}",
@@ -100,13 +105,23 @@ class Client:
 
         order_id = order["success_response"]["order_id"]
 
-        # Poll until the order reaches a terminal state
+        # Wait for order to update
         while True:
             status = self.client.get(f"/api/v3/brokerage/orders/historical/{order_id}")["order"]["status"]
             print("Order status:", status)
-            if status in ("FILLED", "CANCELLED", "EXPIRED", "FAILED"):
+            if status == "FILLED":
+                break
+            elif status in ("CANCELLED", "EXPIRED", "FAILED"):
                 return
-            sleep(2)
+            sleep(1)
+            delay += 1
+
+        # Wait for balance to update (USD will update slower than the ticker)
+        while usd_balance == self.get_balance("USD"):
+            sleep(1)
+            delay += 1
+        print(f"Balance updated in {delay} seconds")
+        return
 
     def get_account_value(self):
         net_worth = Decimal("0.00")

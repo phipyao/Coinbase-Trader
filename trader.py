@@ -11,7 +11,7 @@ client = Client(paper=False)
 
 def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int = 30):
     """
-    Run a rake strategy on a given ticker.
+    Runs a rake strategy on a given ticker.
 
     The strategy holds a principal USD value of the asset.
     Any balance above (principal + rake) is sold periodically.
@@ -43,7 +43,8 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
             client.sell_order(ticker, sell_amount)
         else:
             print("Holding...")
-        print("Total Account Value: ", client.get_account_value())
+        
         sleep(delay)
+        print("Total Account Value: ", client.get_account_value())
 
-strategy(ticker="BTC", principal=52.00, delay=3)
+strategy(ticker="BTC", principal=52.00, delay=30)
