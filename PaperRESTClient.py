@@ -120,5 +120,5 @@ class PaperRESTClient:
                 value = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
             
             net_worth += value
-            print(f"{ticker}: {value}")
+            # print(f"{ticker}: {value}")
         return net_worth
