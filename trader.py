@@ -3,7 +3,7 @@
 # -------------------------------------------------
 from time import sleep
 from decimal import Decimal
-from datetime import datetime
+
 
 from CBTradeEngine import Client
 
@@ -31,12 +31,14 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
         reserve = 0
 
     while True:
-        timestamp = client.get("/v2/time")["data"]["epoch"]
-        print(datetime.fromtimestamp(timestamp))
+        # show timestamp
+        print(client.get_time())
 
         # rake strategy
         balance = client.get_balance(ticker) - reserve
         print("Strategy Balance: ", balance)
+
+        # condition met
         if balance > principal + rake:
             sell_amount = round(balance - principal, 2)
             print("Selling: ", sell_amount)
@@ -45,6 +47,6 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
             print("Holding...")
         
         sleep(delay)
-        print("Total Account Value: ", client.get_account_value())
+        print("Total Account Value: ", client.get_account_values()["TOTAL"])
 
-strategy(ticker="BTC", principal=52.00, delay=30)
+strategy(ticker="BTC", principal=52.00, delay=10)

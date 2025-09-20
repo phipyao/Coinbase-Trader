@@ -9,10 +9,18 @@ from coinbase.rest import RESTClient
 from json import dumps
 from decimal import Decimal, ROUND_DOWN
 from datetime import datetime
-from PaperRESTClient import PaperRESTClient 
+from PaperRESTClient import PaperRESTClient
 
 class Client:
-    def __init__(self, api_key: str = "", api_secret: str = "", key_file:str = "cdp_api_key.json", paper: bool = False, usd_balance=20, btc_balance=0.02):
+    def __init__(self, api_key: str = "", api_secret: str = "", paper: bool = False, usd_balance=20, btc_balance=0.02):
+        """
+        Args:
+            api_key (str, optional): pass as a parameter if there is no .env file.
+            api_secret (str, optional): pass as a parameter if there is no .env file.
+            paper (bool, optional): set to True to enable paper trading. Defaults to False.
+            usd_balance (Decimal, optional): set to pass into paper account USD balance. Defaults to 20 USD.
+            btc_balance (Decimal, optional): set to pass into paper account BTC balance. Defaults to 0.02 BTC.
+        """
         self.api_key = api_key
         self.api_secret = api_secret
 
@@ -31,7 +39,19 @@ class Client:
             self.client = RESTClient(api_key=api_key, api_secret=api_secret)
 
     def get(self, args):
+        """
+        Returns:
+            Default RESTClient GET request
+        """
         return self.client.get(args)
+    
+    def get_time(self) -> datetime:
+        """
+        Returns:
+            Datetime
+        """
+        timestamp = self.client.get("/v2/time")["data"]["epoch"]
+        return datetime.fromtimestamp(timestamp)
     
     def get_balance(self, ticker: str, in_usd: bool = True) -> Decimal:
         """
@@ -86,12 +106,15 @@ class Client:
         Args:
             ticker (str): Currency symbol (e.g., "BTC").
             usd_amount (Decimal): USD value of ticker to buy.
+
+        Returns:
+            int: delay from order
         """
 
         usd_balance = self.get_balance("USD")
         if usd_amount > usd_balance:
             print("Insufficient Funds")
-            return
+            return 0
     
         balance = self.get_balance(ticker, in_usd=False)
         delay = 0
@@ -105,7 +128,7 @@ class Client:
         if order["success"] == False:
             print("Invalid Order")
             print(order["error_response"])
-            return
+            return 0
 
         order_id = order["success_response"]["order_id"]
         # Wait for order to update
@@ -115,7 +138,7 @@ class Client:
             if status == "FILLED":
                 break
             elif status in ("CANCELLED", "EXPIRED", "FAILED"):
-                return
+                return delay
             sleep(1)
             delay += 1
 
@@ -125,22 +148,25 @@ class Client:
             delay += 1
         fill_amount = self.get_balance(ticker, in_usd=False)-balance
         print(f"Order filled for {fill_amount} in {delay} seconds")
-        return
+        return delay
 
-    def sell_order(self, ticker: str, usd_amount: Decimal):
+    def sell_order(self, ticker: str, usd_amount: Decimal) -> int:
         """
         Place a market sell order for a given USD notional. Main thread will sleep until balance properly updates.
 
         Args:
             ticker (str): Currency symbol (e.g., "BTC").
             usd_amount (Decimal): USD value to sell.
+
+        Returns:
+            int: delay from order
         """
         balance = self.get_balance(ticker, in_usd=False)
         order_qty = self.get_by_usd(ticker, usd_amount)
         
         if order_qty > balance:
             print("Insufficient Funds")
-            return
+            return 0
     
         usd_balance = self.get_balance("USD") 
         delay = 0
@@ -154,7 +180,7 @@ class Client:
         if order["success"] == False:
             print("Invalid Order")
             print(order["error_response"])
-            return
+            return 0
 
         order_id = order["success_response"]["order_id"]
 
@@ -165,7 +191,7 @@ class Client:
             if status == "FILLED":
                 break
             elif status in ("CANCELLED", "EXPIRED", "FAILED"):
-                return
+                return delay
             sleep(1)
             delay += 1
 
@@ -175,11 +201,14 @@ class Client:
             delay += 1
         fill_amount = self.get_balance("USD")-usd_balance
         print(f"Order filled for {fill_amount} in {delay} seconds")
-        fees = Decimal(usd_amount).quantize(Decimal("0.01"), rounding=ROUND_DOWN)-fill_amount
-        print(f"Fees: {fees}")
-        return
-
-    def get_account_value(self):
+        return delay
+    
+    def get_account_values(self) -> dict[str, Decimal]:
+        """
+        Returns:
+            Decimal: dict of ticker values in USD
+        """
+        result = {}
         net_worth = Decimal("0.00")
         accounts = self.client.get_accounts()["accounts"]
         for account in accounts:
@@ -193,6 +222,10 @@ class Client:
                 value = balance * price
                 value = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
             
+            if ticker not in result:
+                result[ticker] = 0
+            result[ticker] += value
             net_worth += value
             # print(f"{ticker}: {value}")
-        return net_worth
+        result["TOTAL"] = net_worth
+        return result
