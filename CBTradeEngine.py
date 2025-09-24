@@ -92,6 +92,9 @@ class Client:
         Returns:
             Decimal: Quantity of ticker, rounded to base_increment.
         """
+        if ticker == "USD" or ticker == "USDC":
+            usd_amount = Decimal(usd_amount)
+            return Decimal(usd_amount).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
         price = Decimal(self.client.get_product(f"{ticker}-USD")["price"])
         base_increment = Decimal(self.client.get_product(f"{ticker}-USD")["base_increment"])
 
@@ -105,13 +108,13 @@ class Client:
 
         Args:
             ticker (str): Currency symbol (e.g., "BTC").
-            usd_amount (Decimal): USD value of ticker to buy.
+            usd_amount (Decimal): USDC value of ticker to buy.
 
         Returns:
             int: delay from order
         """
 
-        usd_balance = self.get_balance("USD")
+        usd_balance = self.get_balance("USDC")
         if usd_amount > usd_balance:
             print("Insufficient Funds")
             return 0
@@ -121,7 +124,7 @@ class Client:
 
         order = self.client.market_order_buy(
             client_order_id=f"sell-{ticker}-{datetime.now().timestamp()}",
-            product_id=f"{ticker}-USD",
+            product_id=f"{ticker}-USDC",
             quote_size=str(usd_amount)
         )
 
@@ -168,12 +171,12 @@ class Client:
             print("Insufficient Funds")
             return 0
     
-        usd_balance = self.get_balance("USD") 
+        usd_balance = self.get_balance("USDC") 
         delay = 0
         
         order = self.client.market_order_sell(
             client_order_id=f"sell-{ticker}-{datetime.now().timestamp()}",
-            product_id=f"{ticker}-USD",
+            product_id=f"{ticker}-USDC",
             base_size=str(order_qty)
         )
 
@@ -196,10 +199,10 @@ class Client:
             delay += 1
 
         # Wait for balance to update (USD will update slower than the ticker)
-        while usd_balance == self.get_balance("USD"):
+        while usd_balance == self.get_balance("USDC"):
             sleep(1)
             delay += 1
-        fill_amount = self.get_balance("USD")-usd_balance
+        fill_amount = self.get_balance("USDC")-usd_balance
         print(f"Order filled for {fill_amount} in {delay} seconds")
         return delay
     

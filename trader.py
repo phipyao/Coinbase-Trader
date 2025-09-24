@@ -7,8 +7,6 @@ from decimal import Decimal
 
 from CBTradeEngine import Client
 
-client = Client(paper=False)
-
 def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int = 30):
     """
     Runs a rake strategy on a given ticker.
@@ -22,20 +20,16 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
         rake (Decimal, optional): Minimum profit margin above principal to trigger sell. Defaults to 0.15.
         delay (int, optional): Time (seconds) to wait between balance checks. Defaults to 30.
     """
+    client = Client(paper=False)
     principal = Decimal(principal)
     rake = Decimal(rake)
-
-    reserve = client.get_balance(ticker) - principal
-    if reserve < 0:
-        print(f"Insufficient Funds. Saving until principal of {principal} is met.")
-        reserve = 0
 
     while True:
         # show timestamp
         print(client.get_time())
 
         # rake strategy
-        balance = client.get_balance(ticker) - reserve
+        balance = client.get_balance(ticker)
         print("Strategy Balance: ", balance)
 
         # condition met
@@ -49,4 +43,4 @@ def strategy(ticker: str, principal: Decimal, rake: Decimal = 0.15, delay: int =
         sleep(delay)
         print("Total Account Value: ", client.get_account_values()["TOTAL"])
 
-strategy(ticker="BTC", principal=52.00, delay=10)
+strategy(ticker="BTC", principal=44.00, delay=10)
